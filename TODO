@@ -1,0 +1,16 @@
+- Write cliw script
+  - cliWrapper task
+  - checkCliWrapper task?
+  - Eventually, cliw.bat
+- Configuration with a "cli" extension
+- Should be able to run a Java/JVM main from in a project's source via cliw
+- Can depend on tasks and run those tasks beforehand (e.g. for making sure a Java source is compiled)
+- Should be able to run a Java/JVM main from buildSrc via cliw
+- Also from a plugin
+  - Document the correct way to add this relationship
+- Arguments from the command line should be passed along correctly
+- Interactive CLIs should work correctly
+- Pipes to standard input should work correctly
+- Option to suppress output from Gradle (unless it fails), so
+- Allow other plugins or libraries to add additional types of CLIs and how to run them (i.e. CLIs in other languages)
+  - Probably also include a default "just configure an exec call" type
