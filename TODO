@@ -1,6 +1,6 @@
 - Write cliw script
-  - cliWrapper task
-  - checkCliWrapper task?
+  x cliWrapper task
+  x checkCliWrapper task?
   - Eventually, cliw.bat
 - Configuration with a "cli" extension
 - Should be able to run a Java/JVM main from in a project's source via cliw
@@ -14,3 +14,5 @@
 - Option to suppress output from Gradle (unless it fails), so
 - Allow other plugins or libraries to add additional types of CLIs and how to run them (i.e. CLIs in other languages)
   - Probably also include a default "just configure an exec call" type
+
+- cliw or runw
