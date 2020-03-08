@@ -11,7 +11,7 @@ class GradleCliRunnerPluginTest {
     @Test fun `plugin registers tasks`() {
         // Create a test project and apply the plugin
         val project = ProjectBuilder.builder().build()
-        project.plugins.apply("com.github.alexlandau.gradlecli.greeting")
+        project.plugins.apply("com.github.alexlandau.clirunner")
 
         // Verify the result
         assertNotNull(project.tasks.findByName("cliWrapper"))

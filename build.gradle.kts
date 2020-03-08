@@ -37,7 +37,7 @@ dependencies {
 gradlePlugin {
     // Define the plugin
     val greeting by plugins.creating {
-        id = "com.github.alexlandau.gradlecli.greeting"
+        id = "com.github.alexlandau.clirunner"
         implementationClass = "com.github.alexlandau.gradlecli.GradleCliRunnerPlugin"
     }
 }

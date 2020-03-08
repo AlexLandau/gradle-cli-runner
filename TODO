@@ -16,3 +16,30 @@
   - Probably also include a default "just configure an exec call" type
 
 - cliw or runw
+
+Running `./cliw foo arg1 arg2` will... (MVP)
+1) Run ./gradlew :prepareCliFoo, which will depend on the relevant bits
+2) Look in the build/cliRunner/foo.command text file for a command to run
+3) Run that command, appending the arguments to the end
+
+Should we put the CLI config in the root or individual projects?
+Root:
+cli {
+  // Something like:
+  java('foo', project(':fooproject').sourceSets.main, 'com.example.Foo')
+}
+Projects:
+cli {
+  java('foo', project.sourceSets.main, 'com.example.Foo')
+}
+1) Root could prevent configuration-on-demand from working or otherwise mess up configuration ordering
+(typically root project is configured before subprojects)
+2) Need the extension to be available on the subprojects if going that route; should mess around with
+this and see if I can get it working
+
+Stuff that doesn't fit in the above workflow:
+1) Quiet the gradle output (or make it conditionally quiet)
+   - -q as an argument to cliw is easy enough, but specifying this in the cli config would be tough
+2) Figure out if we want to suppress the Gradle daemon, suppress build scans, pass along args, etc.
+3) Add caching that can avoid even needing to run Gradle, probably by coming up with a list of
+   files/directories with "last modified by" timestamps to confirm (if they're equal, don't rerun Gradle)
