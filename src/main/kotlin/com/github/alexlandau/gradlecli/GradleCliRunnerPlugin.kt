@@ -5,10 +5,16 @@ import org.gradle.api.Project
 import org.gradle.api.Plugin
 import org.gradle.api.plugins.BasePlugin
 
+// TODO: Handle the case of no arguments, printing usage, etc.
 val CLI_WRAPPER_CONTENTS = """
 #!/bin/sh
 
-echo "The logic to run a CLI goes here"
+set -e
+
+CLI_NAME=$1
+
+./gradlew prepareCli_${"$"}{CLI_NAME} --no-daemon
+./build/cliRunner/invocations/${"$"}{CLI_NAME}
 """.trimStart()
 
 class GradleCliRunnerPlugin: Plugin<Project> {
@@ -45,6 +51,7 @@ class GradleCliRunnerPlugin: Plugin<Project> {
         project.tasks.addRule("Prepares the CLI <ID> for being run") { taskName ->
             if (taskName.startsWith("prepareCli_")) {
                 val cliName = taskName.drop("prepareCli_".length)
+                // TODO: Validate that cliName doesn't include certain characters (like /, \, ;, :)
                 project.task(taskName) {
                     val theCli = cliExtension.clis[cliName]
                     if (theCli == null) {
@@ -52,6 +59,13 @@ class GradleCliRunnerPlugin: Plugin<Project> {
                     }
                     for (depTaskName in theCli.taskDependencies) {
                         it.dependsOn(depTaskName)
+                    }
+                    it.doLast {
+                        // Write the invocation to the appropriate file
+                        val invocation = theCli.invocation
+                        val invocationFile = project.file("build/cliRunner/invocations/${cliName}")
+                        invocationFile.parentFile.mkdirs()
+                        invocationFile.writeText(invocation)
                     }
                 }
             }
