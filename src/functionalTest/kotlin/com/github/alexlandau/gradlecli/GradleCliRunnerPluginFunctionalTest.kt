@@ -3,12 +3,14 @@ package com.github.alexlandau.gradlecli
 import java.io.File
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
+import java.lang.RuntimeException
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+// TODO: Eventually reduce some of the redundancy in these tests
 class GradleCliRunnerPluginFunctionalTest {
     @Test fun `can generate the cli wrapper`() {
         val projectDir = setUpMonoProjectTest()
@@ -22,6 +24,7 @@ class GradleCliRunnerPluginFunctionalTest {
 
         assertTrue(result.task(":cliWrapper") != null)
         assertTrue(File(projectDir, "cliw").exists())
+        assertTrue(File(projectDir, "cliw.bat").exists())
     }
 
     @Test fun `it nags if the plugin is applied but cliw is missing`() {
@@ -98,14 +101,27 @@ class GradleCliRunnerPluginFunctionalTest {
         runner.withProjectDir(projectDir)
         runner.build()
 
-        val cliwProcess = ProcessBuilder("./cliw", "helloWorld")
+        // TODO: Use a real implementation of this
+        val cliwCommand = if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
+            // TODO: Improve on this
+            "${projectDir.absolutePath}\\cliw.bat"
+        } else {
+            "./cliw"
+        }
+        val cliwProcess = ProcessBuilder(cliwCommand, "helloWorld")
                 .directory(projectDir)
                 .redirectErrorStream(true)
                 .start()
-
         cliwProcess.waitFor(1, TimeUnit.MINUTES)
         val outputLines = cliwProcess.inputStream.bufferedReader().readLines()
-        assertTrue(outputLines.contains("Hello, world!"))
+        try {
+            assertEquals(0, cliwProcess.exitValue())
+            assertTrue(outputLines.contains("Hello, world!"))
+        } catch (t: Throwable) {
+            println("The CLI output was:")
+            println(outputLines.joinToString("\n"))
+            throw RuntimeException(t)
+        }
     }
 }
 
