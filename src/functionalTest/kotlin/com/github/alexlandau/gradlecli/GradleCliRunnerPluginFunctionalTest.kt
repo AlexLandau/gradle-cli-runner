@@ -48,7 +48,7 @@ class GradleCliRunnerPluginFunctionalTest {
         projectDir.resolve("build.gradle").appendText("""
             apply plugin: 'java'
             
-            cli {
+            clis {
                 javaCli("helloWorld", project.sourceSets.main.runtimeClasspath, "com.example.HelloWorldCli")
             }
         """.trimIndent())
@@ -68,7 +68,7 @@ class GradleCliRunnerPluginFunctionalTest {
         projectDir.resolve("build.gradle").appendText("""
             apply plugin: 'java'
             
-            cli {
+            clis {
                 javaCli("helloWorld", project.sourceSets.main.runtimeClasspath, "com.example.HelloWorldCli")
             }
         """.trimIndent())
@@ -88,7 +88,7 @@ class GradleCliRunnerPluginFunctionalTest {
         projectDir.resolve("build.gradle").appendText("""
             apply plugin: 'java'
             
-            cli {
+            clis {
                 javaCli("helloWorld", project.sourceSets.main.runtimeClasspath, "com.example.HelloWorldCli")
             }
         """.trimIndent())

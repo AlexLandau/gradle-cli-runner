@@ -54,7 +54,9 @@ val functionalTest by tasks.creating(Test::class) {
     testClassesDirs = functionalTestSourceSet.output.classesDirs
     classpath = functionalTestSourceSet.runtimeClasspath
     // The functional tests depend on the jar output of the build (so calling gradlew from cliw works)
-    inputs.files(project.configurations.get("runtime").allArtifacts)
+    // TODO: Pretty sure there ought to be some combination of these that works...
+    dependsOn(tasks.jar)
+    inputs.files({ project.configurations.get("runtime") })
 }
 
 val check by tasks.getting(Task::class) {

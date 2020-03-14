@@ -64,7 +64,7 @@ class GradleCliRunnerPlugin: Plugin<Project> {
             it.dependsOn(checkCliWrapperTask)
         }
 
-        val cliExtension = project.extensions.create("cli", CliExtension::class.java)
+        val cliExtension = project.extensions.create("clis", CliExtension::class.java)
 
         project.tasks.addRule("Prepares the CLI <ID> for being run") { taskName ->
             if (taskName.startsWith("prepareCli_")) {
