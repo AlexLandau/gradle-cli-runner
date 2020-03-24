@@ -64,7 +64,7 @@ class GradleCliRunnerPlugin: Plugin<Project> {
             it.dependsOn(checkCliWrapperTask)
         }
 
-        val cliExtension = project.extensions.create("clis", CliExtension::class.java)
+        val cliExtension = project.extensions.create("clis", ClisExtension::class.java)
 
         project.tasks.addRule("Prepares the CLI <ID> for being run") { taskName ->
             if (taskName.startsWith("prepareCli_")) {
@@ -75,12 +75,12 @@ class GradleCliRunnerPlugin: Plugin<Project> {
                     if (theCli == null) {
                         throw GradleException("Unknown CLI name $cliName")
                     }
-                    for (depTaskName in theCli.taskDependencies) {
+                    for (depTaskName in theCli.getTaskDependencies()) {
                         it.dependsOn(depTaskName)
                     }
                     it.doLast {
                         // Write the invocation to the appropriate file
-                        val invocation = theCli.invocation
+                        val invocation = theCli.getInvocation()
                         val invocationFile = project.file("build/cliRunner/invocations/${cliName}")
                         invocationFile.parentFile.mkdirs()
                         invocationFile.writeText(invocation)

@@ -1,5 +1,6 @@
 package com.github.alexlandau.gradlecli
 
+import org.gradle.testkit.runner.BuildResult
 import java.io.File
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
@@ -10,32 +11,43 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+private class ProjectSetup(val dir: File) {
+    fun runTasks(vararg tasks: String): BuildResult {
+        val runner = GradleRunner.create()
+        runner.forwardOutput()
+        runner.withPluginClasspath()
+        runner.withArguments(tasks.toList())
+        runner.withProjectDir(dir)
+        return runner.build()
+    }
+
+    fun runTasksAndFail(vararg tasks: String): BuildResult {
+        val runner = GradleRunner.create()
+        runner.forwardOutput()
+        runner.withPluginClasspath()
+        runner.withArguments(tasks.toList())
+        runner.withProjectDir(dir)
+        return runner.buildAndFail()
+    }
+}
+
 // TODO: Eventually reduce some of the redundancy in these tests
 class GradleCliRunnerPluginFunctionalTest {
     @Test fun `can generate the cli wrapper`() {
-        val projectDir = setUpMonoProjectTest()
+        val project = setUpMonoProjectTest()
 
-        val runner = GradleRunner.create()
-        runner.forwardOutput()
-        runner.withPluginClasspath()
-        runner.withArguments("cliWrapper")
-        runner.withProjectDir(projectDir)
-        val result = runner.build()
+        val result = project.runTasks("cliWrapper")
 
         assertTrue(result.task(":cliWrapper") != null)
-        assertTrue(File(projectDir, "cliw").exists())
-        assertTrue(File(projectDir, "cliw.bat").exists())
+        assertTrue(File(project.dir, "cliw").exists())
+        assertTrue(File(project.dir, "cliw.bat").exists())
     }
 
-    @Test fun `it nags if the plugin is applied but cliw is missing`() {
-        val projectDir = setUpMonoProjectTest()
 
-        val runner = GradleRunner.create()
-        runner.forwardOutput()
-        runner.withPluginClasspath()
-        runner.withArguments("build")
-        runner.withProjectDir(projectDir)
-        val result = runner.buildAndFail()
+    @Test fun `it nags if the plugin is applied but cliw is missing`() {
+        val project = setUpMonoProjectTest()
+
+        val result = project.runTasksAndFail("build")
 
         val checkResult = result.task(":checkCliWrapper")
         assertNotNull(checkResult)
@@ -44,72 +56,60 @@ class GradleCliRunnerPluginFunctionalTest {
     }
 
     @Test fun `Preparing a Java CLI compiles its classpath`() {
-        val projectDir = setUpMonoProjectTest()
-        projectDir.resolve("build.gradle").appendText("""
+        val project = setUpMonoProjectTest()
+        project.dir.resolve("build.gradle").appendText("""
             apply plugin: 'java'
             
-            clis {
-                javaCli("helloWorld", project.sourceSets.main.runtimeClasspath, "com.example.HelloWorldCli")
+            clis.register("helloWorld", com.github.alexlandau.gradlecli.JavaCli) {
+                className = "com.example.HelloWorldCli"
+                classpath = project.sourceSets.main.runtimeClasspath
             }
         """.trimIndent())
 
-        val runner = GradleRunner.create()
-        runner.forwardOutput()
-        runner.withPluginClasspath()
-        runner.withArguments("prepareCli_helloWorld")
-        runner.withProjectDir(projectDir)
-        val result = runner.build()
+        val result = project.runTasks("prepareCli_helloWorld")
 
         assertNotNull(result.task(":classes"))
     }
 
     @Test fun `Preparing a Java CLI records an invocation`() {
-        val projectDir = setUpMonoProjectTest()
-        projectDir.resolve("build.gradle").appendText("""
+        val project = setUpMonoProjectTest()
+        project.dir.resolve("build.gradle").appendText("""
             apply plugin: 'java'
             
-            clis {
-                javaCli("helloWorld", project.sourceSets.main.runtimeClasspath, "com.example.HelloWorldCli")
+            clis.register("helloWorld", com.github.alexlandau.gradlecli.JavaCli) {
+                className = "com.example.HelloWorldCli"
+                classpath = project.sourceSets.main.runtimeClasspath
             }
         """.trimIndent())
 
-        val runner = GradleRunner.create()
-        runner.forwardOutput()
-        runner.withPluginClasspath()
-        runner.withArguments("prepareCli_helloWorld")
-        runner.withProjectDir(projectDir)
-        runner.build()
+        project.runTasks("prepareCli_helloWorld")
 
-        assertTrue(projectDir.resolve("build/cliRunner/invocations/helloWorld").exists())
+        assertTrue(project.dir.resolve("build/cliRunner/invocations/helloWorld").exists())
     }
 
     @Test fun `Running the HelloWorldCli via cliw works`() {
-        val projectDir = setUpMonoProjectTest()
-        projectDir.resolve("build.gradle").appendText("""
+        val project = setUpMonoProjectTest()
+        project.dir.resolve("build.gradle").appendText("""
             apply plugin: 'java'
             
-            clis {
-                javaCli("helloWorld", project.sourceSets.main.runtimeClasspath, "com.example.HelloWorldCli")
+            clis.register("helloWorld", com.github.alexlandau.gradlecli.JavaCli) {
+                className = "com.example.HelloWorldCli"
+                classpath = project.sourceSets.main.runtimeClasspath
             }
         """.trimIndent())
 
         // Make the CLI wrapper to run
-        val runner = GradleRunner.create()
-        runner.forwardOutput()
-        runner.withPluginClasspath()
-        runner.withArguments(":wrapper", ":cliWrapper")
-        runner.withProjectDir(projectDir)
-        runner.build()
+        project.runTasks(":wrapper", ":cliWrapper")
 
         // TODO: Use a real implementation of this
         val cliwCommand = if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
             // TODO: Improve on this
-            "${projectDir.absolutePath}\\cliw.bat"
+            "${project.dir.absolutePath}\\cliw.bat"
         } else {
             "./cliw"
         }
         val cliwProcess = ProcessBuilder(cliwCommand, "helloWorld")
-                .directory(projectDir)
+                .directory(project.dir)
                 .redirectErrorStream(true)
                 .start()
         cliwProcess.waitFor(1, TimeUnit.MINUTES)
@@ -125,7 +125,7 @@ class GradleCliRunnerPluginFunctionalTest {
     }
 }
 
-private fun setUpMonoProjectTest(): File {
+private fun setUpMonoProjectTest(): ProjectSetup {
     // Setup the test build
     val projectDir = File("build/functionalTest")
     if (projectDir.exists()) {
@@ -155,5 +155,5 @@ private fun setUpMonoProjectTest(): File {
             }
         }
     """.trimIndent())
-    return projectDir
+    return ProjectSetup(projectDir)
 }

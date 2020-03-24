@@ -3,6 +3,7 @@
   x checkCliWrapper task?
   - Eventually, cliw.bat
 - Configuration with a "cli" extension
+- Test that the working directory is as expected
 - Should be able to run a Java/JVM main from in a project's source via cliw
 - Can depend on tasks and run those tasks beforehand (e.g. for making sure a Java source is compiled)
 - Should be able to run a Java/JVM main from buildSrc via cliw
